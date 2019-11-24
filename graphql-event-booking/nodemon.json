@@ -1,0 +1,7 @@
+{
+  "env": {
+    "DB_USER": "kostyniuk",
+    "DB_PASSWORD": "Isco222000",
+    "DB_NAME": "graphql-event"
+  }
+}

@@ -8,12 +8,12 @@ module.exports = buildSchema(`
 type User {
   id: ID!
   nickname: String!
-  email: String!
+  email: Mail!
   password: String
-  followed: [Int]!
-  following: [Int]!,
-  liked: [Int]!,
-  posts: [Int]!  
+  followed: [User]!
+  following: [User]!,
+  liked: [Post]!,
+  posts: [Post]!  
 }
 
 type Mail {
@@ -26,7 +26,7 @@ type Mail {
 
 type Post {
   id: ID!
-  author: Int!,
+  author: User!,
   body: String
   likes: [Int]!
   posted_at: String!
@@ -49,6 +49,7 @@ input PostInput {
   author: ID!
   body: String!
 }
+
 
 type RootQuery {
   users: [User!]!

@@ -12,12 +12,14 @@ module.exports = {
 
   createMail: async args => {
     const { first_name, last_name, login, password } = args.mailInput;
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     try {
       const {
         rows
       } = await db.query(
         `INSERT INTO mail (first_name, last_name, login, password) VALUES ($1, $2, $3, $4) RETURNING id`,
-        [first_name, last_name, login, password]
+        [first_name, last_name, login, hashedPassword]
       );
       const { id } = rows[0];
       return {
@@ -25,7 +27,7 @@ module.exports = {
         login,
         first_name,
         last_name,
-        password
+        password: ''
       };
     } catch (err) {
       throw err;

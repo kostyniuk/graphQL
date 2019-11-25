@@ -26,7 +26,8 @@ type Mail {
 
 type Post {
   id: ID!
-  user: Int!,
+  author: Int!,
+  body: String
   likes: [Int]!
   posted_at: String!
 }
@@ -45,12 +46,13 @@ input MailInput {
 }
 
 input PostInput {
-  user: ID!
+  author: ID!
   body: String!
 }
 
 type RootQuery {
   users: [User!]!
+  mails: [Mail!]!
   posts: [Post!]!
 }
 

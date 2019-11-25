@@ -1,16 +1,18 @@
 const bcrypt = require('bcryptjs');
 
+const db = require('../../db/index');
+const userResolver = require('./user');
+const mailResolver = require('./mail');
+const postResolver = require('./post');
+
 module.exports = {
-  users: () => {
-    return [{
-      id: 2,
-      nickname: 'dada',
-      email: 'dada',
-      password: 'daads',
-      followed: [],
-      following: [],
-      liked: [],
-      posts: []
-    }
-    ]}
+  
+  users: userResolver.getUsers,
+  mails: mailResolver.getMails,
+  posts: postResolver.getPosts,
+
+  createUser: userResolver.createUser,
+  createMail: mailResolver.createMail,
+  createPost: postResolver.createPost,
+
 };

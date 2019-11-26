@@ -93,5 +93,33 @@ module.exports = {
     }
   },
 
-  modifyUser: async argv => {}
+  modifyUser: async args => {
+      try {
+        let { id, nickname, email, password } = args.userInput;
+    let hashedPassword;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 3)
+    }
+    const { rows } = await db.query(`SELECT * FROM bloger WHERE id = $1`, [id]);
+    if (!rows.length) throw new Error('User with given id is not represented at the DB')
+    const updated = {
+      id,
+      nickname: nickname || rows[0].nickname,
+      email: await mailNesting(email || rows[0].email),
+      password: hashedPassword || rows[0].password,
+      //password: 'asdddddjfods',
+      following: await followingNesting(rows[0].following),
+      followed: await followingNesting(rows[0].followed),
+      posts: await postNesting(rows[0].posts),
+      liked_posts: await postNesting(rows[0].liked_posts)
+    }
+    console.log({updated})
+    const updating = await db.query(`UPDATE bloger SET nickname = $1, email = $2, password = $3 WHERE id = $4;`, [updated.nickname, updated.email.login, updated.password, id])
+    console.log(updating);
+    return updated;
+      } catch (err) {
+        throw err
+      }
+    
+  }
 };

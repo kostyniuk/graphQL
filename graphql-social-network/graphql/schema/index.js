@@ -64,6 +64,11 @@ input MailUpdateInput {
   password: String
 }
 
+input PostUpdateInput {
+  id: ID!,
+  body: String
+}
+
 type RootQuery {
   users: [User!]!
   mails: [Mail!]!
@@ -77,8 +82,12 @@ type RootMutation {
 
   createMail(mailInput: MailInput): Mail!
   updateMail(mailInput: MailUpdateInput): Mail!
+  deleteMail(id: ID!): String!
 
   createPost(postInput: PostInput): Post!
+  updatePost(postInput: PostUpdateInput): Post!
+  deletePost(id: ID!): String
+
 }
 
 schema {

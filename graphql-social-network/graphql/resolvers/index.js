@@ -15,6 +15,7 @@ module.exports = {
   createMail: mailResolver.createMail,
   createPost: postResolver.createPost,
 
-  updateUser: userResolver.modifyUser
+  updateUser: userResolver.modifyUser,
+  updateMail: mailResolver.updateMail,
 
 };

@@ -101,7 +101,6 @@ module.exports = {
       if (!rows.length)
         throw new Error('Post with given id is not represented at the DB');
 
-      console.log(rows);
       const updated = {
         id,
         body: body || rows[0].body,

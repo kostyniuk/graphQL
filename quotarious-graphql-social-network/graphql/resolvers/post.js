@@ -97,14 +97,24 @@ module.exports = {
     }
   },
 
-  updatePost: async args => {
+  updatePost: async (args, req) => {
+    
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated')
+    }
     try {
       let { id, body } = args.postInput;
-
+      
       const { rows } = await db.query(`SELECT * FROM post WHERE id = $1`, [id]);
       if (!rows.length)
         throw new Error('Post with given id is not represented at the DB');
 
+      console.log(req[0], req.userId);
+
+      if (rows[0].author !== req.userId) {
+        throw new Error('Only user who created the post can update it')
+      }
+      
       const updated = {
         id,
         body: body || rows[0].body,

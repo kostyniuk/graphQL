@@ -109,8 +109,6 @@ module.exports = {
       if (!rows.length)
         throw new Error('Post with given id is not represented at the DB');
 
-      console.log(req[0], req.userId);
-
       if (rows[0].author !== req.userId) {
         throw new Error('Only user who created the post can update it')
       }
@@ -134,13 +132,27 @@ module.exports = {
     }
   },
 
-  deletePost: async args => {
+  deletePost: async (args, req) => {
+    
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated')
+    }
+    
     try {
+
       const { id } = args;
+
+      const { rows } = await db.query(`SELECT * FROM post WHERE id = $1`, [id]);
+      if (!rows.length)
+        throw new Error('Post with given id is not represented at the DB');
+
+      if (rows[0].author !== req.userId) {
+        throw new Error('Only user who created the post can delete it')
+      }
+
       const { rowCount } = await db.query(`DELETE FROM post WHERE id = $1`, [
         id
       ]);
-      console.log(id);
       updateAuthor(id);
       if (!rowCount)
         throw new Error(

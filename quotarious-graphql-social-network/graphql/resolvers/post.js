@@ -59,8 +59,12 @@ module.exports = {
     }));
   },
 
-  createPost: async args => {
-    const { author, body } = args.postInput;
+  createPost: async (args, req) => {
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated')
+    }
+    const { body } = args.postInput;
+    const author = req.userId;
     try {
       const date = new Date().toISOString();
       const {

@@ -46,7 +46,6 @@ input MailInput {
 }
 
 input PostInput {
-  author: ID!
   body: String!
 }
 
@@ -69,10 +68,19 @@ input PostUpdateInput {
   body: String
 }
 
+type AuthData {
+  userId: ID!
+  token: String!
+  expiresIn: Int!
+}
+
 type RootQuery {
   users: [User!]!
   mails: [Mail!]!
   posts: [Post!]!
+
+  login(email: String!, password: String!): AuthData!
+
 }
 
 type RootMutation {

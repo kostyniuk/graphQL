@@ -2,6 +2,7 @@
 
 const bcrypt = require('bcryptjs');
 const db = require('../../db/index');
+const jwt = require('jsonwebtoken');
 
 const mailNesting = async mailId => {
   const { rows } = await db.query(`SELECT * From mail WHERE login = $1;`, [
@@ -107,8 +108,8 @@ module.exports = {
       ]);
       if (!rows.length)
         throw new Error('User with given id is not represented at the DB');
-      
-        const updated = {
+
+      const updated = {
         id,
         nickname: nickname || rows[0].nickname,
         email: await mailNesting(email || rows[0].email),
@@ -127,5 +128,34 @@ module.exports = {
     } catch (err) {
       throw err;
     }
+  },
+
+  login: async ({ email, password }) => {
+    const isEmailExist = await db.query(
+      `SELECT * from bloger WHERE email = $1;`,
+      [email]
+    );
+    if (!isEmailExist.rows.length) {
+      throw new Error(
+        "User with received email isn't presented at our social network"
+      );
+    }
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      isEmailExist.rows[0].password
+    );
+    if (!isPasswordCorrect) {
+      throw new Error("Password isn't right");
+    }
+
+    const token = jwt.sign({userId: isEmailExist.rows[0].id, email}, 'somesupersecretkey', {
+      expiresIn: '1h'
+    })
+
+    return {
+      userId: isEmailExist.rows[0].id,
+      token,
+      expiresIn: 1
+    };
   }
 };

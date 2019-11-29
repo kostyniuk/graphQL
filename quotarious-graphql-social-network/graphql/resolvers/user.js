@@ -4,6 +4,28 @@ const bcrypt = require('bcryptjs');
 const db = require('../../db/index');
 const jwt = require('jsonwebtoken');
 
+const produceInput = () => {};
+
+const updateFields = async (table, id, field, idObj) => {
+  try {
+    console.log({ table, id, field, idObj });
+    const subject = await db.query(`SELECT * FROM ${table} WHERE id = $1`, [id]);
+    console.log(subject.rows[0]);
+    subject.rows[0][field].push(idObj);
+    const fieldUpd = [
+      ...new Set(subject.rows[0][field].map(x => x.toString()))
+    ];
+    const updatedAuthorized = await db.query(
+      `UPDATE ${table} SET ${field} = $1 WHERE id = $2`,
+      [fieldUpd, id]
+    );
+    console.log({fieldUpd, updatedAuthorized});
+    return fieldUpd;
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 const mailNesting = async mailId => {
   const { rows } = await db.query(`SELECT * From mail WHERE login = $1;`, [
     mailId
@@ -28,6 +50,7 @@ const postNesting = async postIds => {
       const { rows } = await db.query(`SELECT * from post WHERE id = $1;`, [
         postId
       ]);
+      console.log({ here: rows[0] });
       return {
         ...rows[0],
         author: authorNesting.bind(this, rows[0].author)
@@ -38,6 +61,7 @@ const postNesting = async postIds => {
 };
 
 const followingNesting = async userIds => {
+  console.log({userIds})
   const results = await Promise.all(
     userIds.map(async userId => {
       const { rows } = await db.query(`SELECT * from bloger WHERE id = $1;`, [
@@ -95,9 +119,15 @@ module.exports = {
   },
 
   modifyUser: async args => {
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated');
+    }
+
     try {
       let { id, nickname, email, password } = args.userInput;
       let hashedPassword;
+
+      id = req.userId;
 
       if (password) {
         hashedPassword = await bcrypt.hash(password, 12);
@@ -113,7 +143,7 @@ module.exports = {
         id,
         nickname: nickname || rows[0].nickname,
         email: await mailNesting(email || rows[0].email),
-        password: hashedPassword || rows[0].password,
+        password: '',
         following: await followingNesting(rows[0].following),
         followed: await followingNesting(rows[0].followed),
         posts: await postNesting(rows[0].posts),
@@ -148,14 +178,80 @@ module.exports = {
       throw new Error("Password isn't right");
     }
 
-    const token = jwt.sign({userId: isEmailExist.rows[0].id, email}, 'somesupersecretkey', {
-      expiresIn: '1h'
-    })
+    const token = jwt.sign(
+      { userId: isEmailExist.rows[0].id, email },
+      'somesupersecretkey',
+      {
+        expiresIn: '1h'
+      }
+    );
 
     return {
       userId: isEmailExist.rows[0].id,
       token,
       expiresIn: 1
     };
+  },
+
+  likePost: async (args, req) => {
+    try {
+      if (!req.isAuth) {
+        throw new Error('Unauthenticated');
+      }
+
+      const { userId } = req;
+      const { id } = args;
+
+      await updateFields('post', id, 'likes', userId);
+      await updateFields('bloger', userId, 'liked_posts', id);
+
+      const user = await db.query(`SELECT * FROM bloger WHERE id = $1`, [userId]);
+
+      const updated = {
+        id: userId,
+        nickname: user.rows[0].nickname,
+        email: await mailNesting(user.rows[0].email),
+        password: '',
+        following: await followingNesting(user.rows[0].following),
+        followed: await followingNesting(user.rows[0].followed),
+        posts: await postNesting(user.rows[0].posts),
+        liked_posts: await postNesting(user.rows[0].liked_posts)
+      };
+
+      return updated;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  followUser: async (args, req) => {
+    try {
+      if (!req.isAuth) {
+        throw new Error('Unauthenticated');
+      }
+
+      const { userId } = req;
+      const { id } = args;
+
+      await updateFields('bloger', userId, 'following', id);
+      await updateFields('bloger', id, 'followed', userId);
+
+      const authorized = await db.query(`SELECT * FROM bloger WHERE id = $1`, [
+        userId
+      ]);
+
+      return {
+        id: userId,
+        nickname: authorized.rows[0].nickname,
+        email: await mailNesting(authorized.rows[0].email),
+        password: '',
+        following: await followingNesting(authorized.rows[0].following),
+        followed: await followingNesting(authorized.rows[0].followed),
+        posts: await postNesting(authorized.rows[0].posts),
+        liked_posts: await postNesting(authorized.rows[0].liked_posts)
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 };

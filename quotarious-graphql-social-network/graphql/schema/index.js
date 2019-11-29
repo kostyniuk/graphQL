@@ -12,7 +12,7 @@ type User {
   password: String
   followed: [User]!
   following: [User]!,
-  liked: [Post]!,
+  liked_posts: [Post]!,
   posts: [Post]!  
 }
 
@@ -85,7 +85,7 @@ type RootQuery {
 
 type RootMutation {
   createUser(userInput: UserInput): User!
-  updateUser(userInput: UserUpdateInput): User!
+  updateUser(userInput: UserInput): User!
   deleteUser(id: ID!): String!
 
   createMail(mailInput: MailInput): Mail!
@@ -95,6 +95,9 @@ type RootMutation {
   createPost(postInput: PostInput): Post!
   updatePost(postInput: PostUpdateInput): Post!
   deletePost(id: ID!): String
+
+  likePost(id: ID!): User!
+  followUser(id: ID!): User!
 
 }
 

@@ -21,6 +21,9 @@ module.exports = {
 
   deletePost: postResolver.deletePost,
 
-  login: userResolver.login
+  login: userResolver.login,
+
+  likePost: userResolver.likePost,
+  followUser: userResolver.followUser
 
 };

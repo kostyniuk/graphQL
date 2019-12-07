@@ -41,4 +41,4 @@ When you follow someone, you can see them in your following section, and
  
  Every post have fields: author(creator's id) and likes(ids of users who liked it)
  
- Of course, you can anytime delete user, mail or post(if you've created it)
+ Of course, you can anytime delete user(you need to confirm your password), mail or post(if you've created it)

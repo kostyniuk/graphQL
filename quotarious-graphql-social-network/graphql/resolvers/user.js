@@ -9,7 +9,9 @@ const produceInput = () => {};
 const updateFields = async (table, id, field, idObj) => {
   try {
     console.log({ table, id, field, idObj });
-    const subject = await db.query(`SELECT * FROM ${table} WHERE id = $1`, [id]);
+    const subject = await db.query(`SELECT * FROM ${table} WHERE id = $1`, [
+      id
+    ]);
     console.log(subject.rows[0]);
     subject.rows[0][field].push(idObj);
     const fieldUpd = [
@@ -19,7 +21,7 @@ const updateFields = async (table, id, field, idObj) => {
       `UPDATE ${table} SET ${field} = $1 WHERE id = $2`,
       [fieldUpd, id]
     );
-    console.log({fieldUpd, updatedAuthorized});
+    console.log({ fieldUpd, updatedAuthorized });
     return fieldUpd;
   } catch (err) {
     console.log(err);
@@ -61,7 +63,7 @@ const postNesting = async postIds => {
 };
 
 const followingNesting = async userIds => {
-  console.log({userIds})
+  console.log({ userIds });
   const results = await Promise.all(
     userIds.map(async userId => {
       const { rows } = await db.query(`SELECT * from bloger WHERE id = $1;`, [
@@ -205,7 +207,9 @@ module.exports = {
       await updateFields('post', id, 'likes', userId);
       await updateFields('bloger', userId, 'liked_posts', id);
 
-      const user = await db.query(`SELECT * FROM bloger WHERE id = $1`, [userId]);
+      const user = await db.query(`SELECT * FROM bloger WHERE id = $1`, [
+        userId
+      ]);
 
       const updated = {
         id: userId,
@@ -250,6 +254,38 @@ module.exports = {
         posts: await postNesting(authorized.rows[0].posts),
         liked_posts: await postNesting(authorized.rows[0].liked_posts)
       };
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  deleteUser: async (args, req) => {
+    try {
+      if (!req.isAuth) {
+        throw new Error('Unauthenticated');
+      }
+
+      const { userId } = req;
+      const { password } = args;
+
+      //await updateFields('bloger', userId, 'following', id);
+      //await updateFields('bloger', id, 'followed', userId);
+
+      const { rows } = await db.query(`SELECT * FROM bloger WHERE id = $1`, [
+        userId
+      ]);
+      const realPassword = rows[0].password;
+      const isPassRight = await bcrypt.compare(password, realPassword);
+
+      if (isPassRight) {
+        const rowCount = await db.query(
+          `DELETE FROM bloger WHERE id = $1;`,
+          [userId]
+        );
+        return 'User deleted';
+      }
+
+      return "User can't be deleted. Password isn't right.";
     } catch (err) {
       throw err;
     }

@@ -20,6 +20,7 @@ module.exports = {
   updatePost: postResolver.updatePost,
 
   deletePost: postResolver.deletePost,
+  deleteUser: userResolver.deleteUser,
 
   login: userResolver.login,
 

@@ -86,7 +86,7 @@ type RootQuery {
 type RootMutation {
   createUser(userInput: UserInput): User!
   updateUser(userInput: UserInput): User!
-  deleteUser(id: ID!): String!
+  deleteUser(password: String!): String!
 
   createMail(mailInput: MailInput): Mail!
   updateMail(mailInput: MailUpdateInput): Mail!

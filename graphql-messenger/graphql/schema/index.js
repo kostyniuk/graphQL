@@ -12,6 +12,7 @@ type User {
   number: String!
   email: String!
   password: String!
+  messages: [Message]!
 }
 
 type Message {
@@ -41,7 +42,8 @@ type RootQuery {
 }
 
 type RootMutation {
-  createUser(userInput: UserInput): User!
+  createUser(userInput: UserInput): String!
+  deleteUser(id: ID, password: String!): String!
 
 }
 

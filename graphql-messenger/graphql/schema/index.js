@@ -45,6 +45,8 @@ type RootMutation {
   createUser(userInput: UserInput): String!
   deleteUser(id: ID, password: String!): String!
 
+  sendMessage(from: ID, to: ID, body: String): String!
+
 }
 
 schema {

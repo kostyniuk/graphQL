@@ -6,9 +6,9 @@ const jwt = require('jsonwebtoken');
 
 const produceInput = () => {};
 
-const updateFields = async (table, id, field, idObj) => {
+const updateFields = async (mutationType, table, id, field, idObj) => {
   try {
-    console.log({ table, id, field, idObj });
+    console.log({mutationType, table, id, field, idObj });
     const subject = await db.query(`SELECT * FROM ${table} WHERE id = $1`, [
       id
     ]);
@@ -36,6 +36,8 @@ const mailNesting = async mailId => {
 };
 
 const authorNesting = async authorId => {
+  //console.log({mjkdf: 'dasjkadsnk'})
+  console.log({authorId})
   const { rows } = await db.query(`SELECT * From bloger WHERE id = $1;`, [
     authorId
   ]);
@@ -47,18 +49,20 @@ const authorNesting = async authorId => {
 };
 
 const postNesting = async postIds => {
+  console.log(postIds)
   const results = await Promise.all(
     postIds.map(async postId => {
       const { rows } = await db.query(`SELECT * from post WHERE id = $1;`, [
         postId
       ]);
-      console.log({ here: rows[0] });
+      //console.log({ here: rows[0].author });
       return {
         ...rows[0],
         author: authorNesting.bind(this, rows[0].author)
       };
     })
   );
+  console.log({results})
   return results;
 };
 
@@ -69,7 +73,8 @@ const followingNesting = async userIds => {
       const { rows } = await db.query(`SELECT * from bloger WHERE id = $1;`, [
         userId
       ]);
-      return {
+      console.log({res: rows[0]})
+      const returning = {
         ...rows[0],
         posts: postNesting.bind(this, rows[0].posts),
         liked: postNesting.bind(this, rows[0].liked_posts),
@@ -77,8 +82,12 @@ const followingNesting = async userIds => {
         following: followingNesting.bind(this, rows[0].following),
         followed: followingNesting.bind(this, rows[0].followed)
       };
+      //console.log({returning})
+      return returning 
     })
   );
+  //console.log('dsf')
+  //console.log({results})
   return results;
 };
 
@@ -204,8 +213,8 @@ module.exports = {
       const { userId } = req;
       const { id } = args;
 
-      await updateFields('post', id, 'likes', userId);
-      await updateFields('bloger', userId, 'liked_posts', id);
+      await updateFields('add',  'post', id, 'likes', userId);
+      await updateFields('add', 'bloger', userId, 'liked_posts', id);
 
       const user = await db.query(`SELECT * FROM bloger WHERE id = $1`, [
         userId
@@ -222,6 +231,8 @@ module.exports = {
         liked_posts: await postNesting(user.rows[0].liked_posts)
       };
 
+      console.log({updated})
+
       return updated;
     } catch (err) {
       throw err;
@@ -237,8 +248,8 @@ module.exports = {
       const { userId } = req;
       const { id } = args;
 
-      await updateFields('bloger', userId, 'following', id);
-      await updateFields('bloger', id, 'followed', userId);
+      await updateFields('add', 'bloger', userId, 'following', id);
+      await updateFields('add', 'bloger', id, 'followed', userId);
 
       const authorized = await db.query(`SELECT * FROM bloger WHERE id = $1`, [
         userId

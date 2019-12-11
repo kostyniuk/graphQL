@@ -10,6 +10,8 @@ type User {
   firstName: String!
   lastName: String!
   number: String!
+  email: String!
+  password: String!
 }
 
 type Message {
@@ -25,6 +27,8 @@ input UserInput {
   firstName: String!
   lastName: String!
   number: String!
+  email: String!
+  password: String!
 }
 
 input MessageInput {

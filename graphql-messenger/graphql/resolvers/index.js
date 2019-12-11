@@ -6,9 +6,12 @@ const messageResolver = require('./user');
 module.exports = {
 
   users: userResolver.getUsers,
-  getUser: userResolver.getUser
+  getUser: userResolver.getUser,
+  createUser: userResolver.createUser,
+  deleteUser: userResolver.deleteUser,
+  sendMessage: userResolver.sendMessage
 
 
-}
+};
 
 

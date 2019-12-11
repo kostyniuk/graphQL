@@ -78,7 +78,6 @@ module.exports = {
       }
 
       const result = await db.query(queryDeletion, [id])
-      console.log(result)
 
       return `User with id =  ${id} successfully deleted`
     } catch (err) {

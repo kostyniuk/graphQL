@@ -13,16 +13,32 @@ const resBuilder = arrOfRes => {
     lastName: obj.lastname,
     number: obj.number,
     email: obj.email,
-    password: obj.password
+    password: obj.password,
+    messages: obj.messages
   }));
 };
 
-const table = 'person';
+const messageBuilder = (id, from, to, body) => {
+  const date = new Date().toISOString()
+  return {
+    id,
+    body,
+    sentAt: date,
+    sender: from,
+    receiver: to
+  }
+}
+
+const usersTable = 'person';
+const mailsTable = 'messages';
+
+const querySelection = `SELECT * FROM ${usersTable} WHERE id = $1`;
+const queryDeletion = `DELETE FROM ${usersTable} WHERE id = $1`;
 
 module.exports = {
   getUsers: async () => {
     try {
-      const { rows } = await db.query(`SELECT * FROM ${table};`);
+      const { rows } = await db.query(`SELECT * FROM ${usersTable};`);
       return resBuilder(rows);
     } catch (err) {
       throw err;
@@ -30,9 +46,9 @@ module.exports = {
   },
 
   getUser: async ({ id }) => {
-    const { rows } = await db.query(`SELECT * FROM ${table} WHERE id = $1;`, [
-      id
-    ]);
+    const {
+      rows
+    } = await db.query(`SELECT * FROM ${usersTable} WHERE id = $1;`, [id]);
     return resBuilder(rows)[0];
   },
 
@@ -46,10 +62,10 @@ module.exports = {
       password
     } = args.userInput;
     const hashed = await bcrypt.hash(password, 12);
-    const fields = [nickname, firstName, lastName, number, email, hashed];
+    const fields = [nickname, firstName, lastName, number, email, hashed, []];
     const query = `
-    INSERT INTO ${table} (nickname, firstName, lastName, number, email, password)
-    VALUES($1, $2, $3, $4, $5, $6) RETURNING id ;`;
+    INSERT INTO ${usersTable} (nickname, firstName, lastName, number, email, password, messages)
+    VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id ;`;
     const { rows } = await db.query(query, fields);
     const { id } = rows[0];
     return `User succesfully created with the id - ${id}`;
@@ -57,11 +73,7 @@ module.exports = {
 
   deleteUser: async args => {
     try {
-
       const { id, password } = args;
-
-      const querySelection = `SELECT * FROM ${table} WHERE id = $1`;
-      const queryDeletion = `DELETE FROM ${table} WHERE id = $1`;
 
       let { rows } = await db.query(querySelection, [id]);
 
@@ -69,17 +81,39 @@ module.exports = {
         throw new Error('User with received id not found');
       }
 
-      const hashedPass = rows[0].password
-      
-      const isMatching = await bcrypt.compare(password, hashedPass)
+      const hashedPass = rows[0].password;
+
+      const isMatching = await bcrypt.compare(password, hashedPass);
 
       if (!isMatching) {
-        throw new Error('Password isn\'t right');
+        throw new Error("Password isn't right");
       }
 
-      const result = await db.query(queryDeletion, [id])
+      const result = await db.query(queryDeletion, [id]);
 
-      return `User with id =  ${id} successfully deleted`
+      return `User with id =  ${id} successfully deleted`;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  sendMessage: async (args, req) => {
+    try {
+      const { from, to, body } = args;
+
+      let { rows } = await db.query(querySelection, [from]);
+      const senderMessages = rows[0].messages;
+
+      let result = await db.query(querySelection, [to]);
+      const receiver = result.rows[0];
+
+      if (!receiver) {
+        throw new Error('User which you aim to send a message doesn\'t exist')
+      }
+
+      const receiverMessages = receiver.messages;
+      console.log({ from, body, to, senderMessages, receiverMessages });
+      return 'Message sent';
     } catch (err) {
       throw err
     }

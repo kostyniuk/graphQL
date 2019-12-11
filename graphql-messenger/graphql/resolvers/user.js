@@ -23,7 +23,8 @@ module.exports = {
   }, 
 
   getUser: async ({id}) => {
-    console.log(id)
+    const {rows} = await db.query(`SELECT * FROM ${table} WHERE id = $1;`, [id])
+    return resBuilder(rows)[0]
   }
 
 }

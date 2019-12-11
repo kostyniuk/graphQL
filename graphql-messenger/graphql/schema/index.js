@@ -37,6 +37,7 @@ input MessageInput {
 
 type RootQuery {
   users: [User!]!
+  getUser(id: ID): User!
 }
 
 type RootMutation {

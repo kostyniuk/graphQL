@@ -5,7 +5,8 @@ const messageResolver = require('./user');
 
 module.exports = {
 
-  users: userResolver.getUsers
+  users: userResolver.getUsers,
+  getUser: userResolver.getUser
 
 
 }

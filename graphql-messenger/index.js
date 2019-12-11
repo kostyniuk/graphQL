@@ -3,7 +3,6 @@
 const express = require('express');
 const graphqlHttp = require('express-graphql');
 const bodyParser = require('body-parser');
-const db = require('./db/index');
 
 const graphqlSchema = require('./graphql/schema/index');
 const graphqlResolvers = require('./graphql/resolvers/index');
@@ -25,12 +24,12 @@ app.use(
   })
 );
 
-const DBtest = async () => {
-  const {rows} = await db.query(`SELECT * FROM person;`, [])
-  console.log(rows)
-}
+// const DBtest = async () => {
+//   const {rows} = await db.query(`SELECT * FROM person;`, [])
+//   console.log(rows)
+// }
 
-DBtest()
+// DBtest()
 
 app.listen(3000, () => {
   console.log('Server is listening at http://localhost:3000');

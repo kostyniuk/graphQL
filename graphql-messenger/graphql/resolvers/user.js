@@ -1,24 +1,29 @@
 'use strict';
 
+const db = require('../../db/index');
+
+const resBuilder = arrOfRes => {
+  return arrOfRes.map(obj => ({
+    id: obj.id,
+    nickname: obj.nickname,
+    firstName: obj.firstname,
+    lastName: obj.lastname,
+    number: obj.number,
+    email: obj.email,
+    password: obj.password
+  }))
+}
+
+const table = 'person';
+
 module.exports = {
-  getUsers: async (args, req) => {
-    return [{
-      id: 1,
-      nickname: 'alex',
-      firstName: 'Alex',
-      lastName: 'Kostyniuk',
-      number: '066132451',
-      email: 'asddas@dkal.com',
-      password: 'asdasd'
-    }, 
-    {
-      id: 2,
-      nickname: 'dloading',
-      firstName: 'D\'Angelo',
-      lastName: 'Russell',
-      number: '037421902',
-      email: 'df@ike.nr',
-      password: '132321'
-    }]
+  getUsers: async () => {
+    const {rows} = await db.query(`SELECT * FROM ${table};`)
+    return resBuilder(rows)
+  }, 
+
+  getUser: async ({id}) => {
+    console.log(id)
   }
+
 }

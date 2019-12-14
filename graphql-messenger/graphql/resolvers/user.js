@@ -4,23 +4,29 @@
 const bcrypt = require('bcryptjs');
 
 const db = require('../../db/index');
-const date = require('../../helpers/date');
 
 const spreadMessages = async (arrOfIds) => {
-  console.log(arrOfIds)
-  const messages = Promise.all(arrOfIds.map( async (id, i, arr) => {
+  //console.log(arrOfIds)
+  const messages = await Promise.all(arrOfIds.map( async (id, i, arr) => {
     const {rows} = await db.query(`SELECT * FROM ${mailsTable} WHERE id = $1`, [id])
     const message = rows[0]
     return message
   }))
-  return messages
+  return messages.map(async (message, i, arr) => {
+
+    const senderInfo = await db.query(querySelection,[message.sender])
+    const receiverInfo = await db.query(querySelection,[message.receiver])
+    message.receiver = resBuilder.bind(this, receiverInfo.rows)
+    message.sender = resBuilder.bind(this, senderInfo.rows)
+    //console.log({mes: message.receiver(), res: message.sender()})
+    return message
+  })
 }
 
-const resBuilder = async arrOfRes => {
-  return arrOfRes.map( async (obj) => { 
-    //const message = 
-    //console.log({message})
-    return {
+
+const resBuilder = arrOfRes => {
+  const result = arrOfRes.map( (obj) => { 
+    return  {
     id: obj.id,
     nickname: obj.nickname,
     firstName: obj.firstname,
@@ -28,9 +34,14 @@ const resBuilder = async arrOfRes => {
     number: obj.number,
     email: obj.email,
     password: obj.password,
-    messages: await spreadMessages(obj.messages)
+    messages: spreadMessages.bind(this, obj.messages)
     }
   });
+
+  if (result.length === 1) {
+    return result[0]
+  }
+  return result
 };
 
 const messageBuilder = (id, from, to, body) => {

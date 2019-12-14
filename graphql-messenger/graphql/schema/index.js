@@ -19,8 +19,8 @@ type Message {
   id: ID!
   body: String!
   sentat: String!
-  sender: ID!
-  receiver: ID!
+  sender: User!
+  receiver: User!
 }
 
 input UserInput {

@@ -6,8 +6,21 @@ const bcrypt = require('bcryptjs');
 const db = require('../../db/index');
 const date = require('../../helpers/date');
 
-const resBuilder = arrOfRes => {
-  return arrOfRes.map(obj => ({
+const spreadMessages = async (arrOfIds) => {
+  console.log(arrOfIds)
+  const messages = Promise.all(arrOfIds.map( async (id, i, arr) => {
+    const {rows} = await db.query(`SELECT * FROM ${mailsTable} WHERE id = $1`, [id])
+    const message = rows[0]
+    return message
+  }))
+  return messages
+}
+
+const resBuilder = async arrOfRes => {
+  return arrOfRes.map( async (obj) => { 
+    //const message = 
+    //console.log({message})
+    return {
     id: obj.id,
     nickname: obj.nickname,
     firstName: obj.firstname,
@@ -15,8 +28,9 @@ const resBuilder = arrOfRes => {
     number: obj.number,
     email: obj.email,
     password: obj.password,
-    messages: obj.messages
-  }));
+    messages: await spreadMessages(obj.messages)
+    }
+  });
 };
 
 const messageBuilder = (id, from, to, body) => {
@@ -32,15 +46,15 @@ const messageBuilder = (id, from, to, body) => {
 
 const updateField = async (action, table, field, original, toChange, id) => {
   if (action === 'insert') {
-    console.log({action, table, field, original, toChange, id})
+    //console.log({action, table, field, original, toChange, id})
     original.push(toChange)
     const data = Array.from(new Set(original))
-    console.log({data, id})
+    //console.log({data, id})
     const result = await db.query(`UPDATE ${table} SET ${field} = $1 WHERE id = $2;`, [data, id])
-    //console.log(result)
+    return true;
   }
   if (action === 'extract') {
-
+    // for deleting messages
   }
 }
 
@@ -121,22 +135,25 @@ module.exports = {
 
       let { rows } = await db.query(querySelection, [from]);
       const sender = rows[0];
-      const senderMessages = rows[0].messages;
+      const senderMessages = sender.messages;
 
       let result = await db.query(querySelection, [to]);
       const receiver = result.rows[0];
+      const receiverMessages = receiver.messages;
+
 
       if (!receiver) {
         throw new Error('User which you aim to send a message doesn\'t exist')
       }
-      const sentAt = date.now();
-      const messageNew = await db.query(`INSERT INTO ${mailsTable} (${mailFields.join(', ')}) VALUES ($1, $2, $3, $4) RETURNING id; `, [body, sentAt, from, to])
 
-      const receiverMessages = receiver.messages;
-      let id = messageNew.rows[0].id
-      console.log({id})
-      console.log({ from, body, to, senderMessages, receiverMessages });
-      updateField('insert', usersTable, 'messages', senderMessages, id, sender.id)
+      const sentAt = date.now();
+      
+      const messageNew = await db.query(`INSERT INTO ${mailsTable} (${mailFields.join(', ')}) VALUES ($1, $2, $3, $4) RETURNING id; `, [body, sentAt, from, to])
+      const mailId = messageNew.rows[0].id
+
+      updateField('insert', usersTable, 'messages', senderMessages, mailId, sender.id)
+      updateField('insert', usersTable, 'messages', receiverMessages, mailId, receiver.id)
+      
       return 'Message sent';
     } catch (err) {
       throw err

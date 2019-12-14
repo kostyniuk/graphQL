@@ -18,7 +18,7 @@ type User {
 type Message {
   id: ID!
   body: String!
-  sentAt: String!
+  sentat: String!
   sender: ID!
   receiver: ID!
 }

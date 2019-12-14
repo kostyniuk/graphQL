@@ -4,6 +4,7 @@
 const bcrypt = require('bcryptjs');
 
 const db = require('../../db/index');
+const date = require('../../helpers/date');
 
 const resBuilder = arrOfRes => {
   return arrOfRes.map(obj => ({
@@ -29,8 +30,25 @@ const messageBuilder = (id, from, to, body) => {
   }
 }
 
+const updateField = async (action, table, field, original, toChange, id) => {
+  if (action === 'insert') {
+    console.log({action, table, field, original, toChange, id})
+    original.push(toChange)
+    const data = Array.from(new Set(original))
+    console.log({data, id})
+    const result = await db.query(`UPDATE ${table} SET ${field} = $1 WHERE id = $2;`, [data, id])
+    //console.log(result)
+  }
+  if (action === 'extract') {
+
+  }
+}
+
 const usersTable = 'person';
-const mailsTable = 'messages';
+const userFields = ['nickname', 'firstname', 'lastname', 'number', 'email', 'password', 'messages']
+const mailsTable = 'message';
+const mailFields = ['body', 'sentat', 'sender', 'receiver']
+
 
 const querySelection = `SELECT * FROM ${usersTable} WHERE id = $1`;
 const queryDeletion = `DELETE FROM ${usersTable} WHERE id = $1`;
@@ -102,6 +120,7 @@ module.exports = {
       const { from, to, body } = args;
 
       let { rows } = await db.query(querySelection, [from]);
+      const sender = rows[0];
       const senderMessages = rows[0].messages;
 
       let result = await db.query(querySelection, [to]);
@@ -110,9 +129,14 @@ module.exports = {
       if (!receiver) {
         throw new Error('User which you aim to send a message doesn\'t exist')
       }
+      const sentAt = date.now();
+      const messageNew = await db.query(`INSERT INTO ${mailsTable} (${mailFields.join(', ')}) VALUES ($1, $2, $3, $4) RETURNING id; `, [body, sentAt, from, to])
 
       const receiverMessages = receiver.messages;
+      let id = messageNew.rows[0].id
+      console.log({id})
       console.log({ from, body, to, senderMessages, receiverMessages });
+      updateField('insert', usersTable, 'messages', senderMessages, id, sender.id)
       return 'Message sent';
     } catch (err) {
       throw err

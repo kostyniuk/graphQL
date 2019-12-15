@@ -1,7 +1,7 @@
 'use strict';
 
 const userResolver = require('./user');
-const messageResolver = require('./user');
+const messageResolver = require('./message');
 
 module.exports = {
 
@@ -9,7 +9,8 @@ module.exports = {
   getUser: userResolver.getUser,
   createUser: userResolver.createUser,
   deleteUser: userResolver.deleteUser,
-  sendMessage: userResolver.sendMessage
+  sendMessage: userResolver.sendMessage,
+  deleteMessage: messageResolver.deleteMessage
 
 
 };

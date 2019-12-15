@@ -7,73 +7,70 @@ const db = require('../../db/index');
 
 const spreadMessages = async (arrOfIds) => {
   //console.log(arrOfIds)
-  const messages = await Promise.all(arrOfIds.map( async (id, i, arr) => {
-    const {rows} = await db.query(`SELECT * FROM ${mailsTable} WHERE id = $1`, [id])
-    const message = rows[0]
-    return message
-  }))
+  const messages = await Promise.all(
+    arrOfIds.map(async (id, i, arr) => {
+      const {
+        rows
+      } = await db.query(`SELECT * FROM ${mailsTable} WHERE id = $1`, [id]);
+      const message = rows[0];
+      return message;
+    })
+  );
   return messages.map(async (message, i, arr) => {
-
-    const senderInfo = await db.query(querySelection,[message.sender])
-    const receiverInfo = await db.query(querySelection,[message.receiver])
-    message.receiver = resBuilder.bind(this, receiverInfo.rows)
-    message.sender = resBuilder.bind(this, senderInfo.rows)
+    const senderInfo = await db.query(querySelection, [message.sender]);
+    const receiverInfo = await db.query(querySelection, [message.receiver]);
+    message.receiver = resBuilder.bind(this, receiverInfo.rows); // we must use bind in dynamic relations to avoid endless recursion
+    message.sender = resBuilder.bind(this, senderInfo.rows);
     //console.log({mes: message.receiver(), res: message.sender()})
-    return message
-  })
-}
-
+    return message;
+  });
+};
 
 const resBuilder = arrOfRes => {
-  const result = arrOfRes.map( (obj) => { 
-    return  {
-    id: obj.id,
-    nickname: obj.nickname,
-    firstName: obj.firstname,
-    lastName: obj.lastname,
-    number: obj.number,
-    email: obj.email,
-    password: obj.password,
-    messages: spreadMessages.bind(this, obj.messages)
-    }
+  const result = arrOfRes.map(obj => {
+    return {
+      id: obj.id,
+      nickname: obj.nickname,
+      firstName: obj.firstname,
+      lastName: obj.lastname,
+      number: obj.number,
+      email: obj.email,
+      password: obj.password,
+      messages: spreadMessages.bind(this, obj.messages)
+    };
   });
 
   if (result.length === 1) {
-    return result[0]
+    return result[0];
   }
-  return result
+  return result;
 };
 
 const messageBuilder = (id, from, to, body) => {
-  const date = new Date().toISOString()
+  const date = new Date().toISOString();
   return {
     id,
     body,
     sentAt: date,
     sender: from,
     receiver: to
-  }
-}
+  };
+};
 
-const updateField = async (action, table, field, original, toChange, id) => {
-  if (action === 'insert') {
-    //console.log({action, table, field, original, toChange, id})
-    original.push(toChange)
-    const data = Array.from(new Set(original))
-    //console.log({data, id})
-    const result = await db.query(`UPDATE ${table} SET ${field} = $1 WHERE id = $2;`, [data, id])
-    return true;
-  }
-  if (action === 'extract') {
-    // for deleting messages
-  }
-}
+const updateField = require('../../helpers/updateField')
 
 const usersTable = 'person';
-const userFields = ['nickname', 'firstname', 'lastname', 'number', 'email', 'password', 'messages']
+const userFields = [
+  'nickname',
+  'firstname',
+  'lastname',
+  'number',
+  'email',
+  'password',
+  'messages'
+];
 const mailsTable = 'message';
-const mailFields = ['body', 'sentat', 'sender', 'receiver']
-
+const mailFields = ['body', 'sentat', 'sender', 'receiver'];
 
 const querySelection = `SELECT * FROM ${usersTable} WHERE id = $1`;
 const queryDeletion = `DELETE FROM ${usersTable} WHERE id = $1`;
@@ -152,22 +149,40 @@ module.exports = {
       const receiver = result.rows[0];
       const receiverMessages = receiver.messages;
 
-
       if (!receiver) {
-        throw new Error('User which you aim to send a message doesn\'t exist')
+        throw new Error("User which you aim to send a message doesn't exist");
       }
 
-      const sentAt = date.now();
-      
-      const messageNew = await db.query(`INSERT INTO ${mailsTable} (${mailFields.join(', ')}) VALUES ($1, $2, $3, $4) RETURNING id; `, [body, sentAt, from, to])
-      const mailId = messageNew.rows[0].id
+      const sentAt = new Date().toISOString()
 
-      updateField('insert', usersTable, 'messages', senderMessages, mailId, sender.id)
-      updateField('insert', usersTable, 'messages', receiverMessages, mailId, receiver.id)
-      
+      const messageNew = await db.query(
+        `INSERT INTO ${mailsTable} (${mailFields.join(
+          ', '
+        )}) VALUES ($1, $2, $3, $4) RETURNING id; `,
+        [body, sentAt, from, to]
+      );
+      const mailId = messageNew.rows[0].id;
+
+      updateField(
+        'insert',
+        usersTable,
+        'messages',
+        senderMessages,
+        mailId,
+        sender.id
+      );
+      updateField(
+        'insert',
+        usersTable,
+        'messages',
+        receiverMessages,
+        mailId,
+        receiver.id
+      );
+
       return 'Message sent';
     } catch (err) {
-      throw err
+      throw err;
     }
   }
 };

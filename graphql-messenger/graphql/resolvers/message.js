@@ -71,5 +71,21 @@ module.exports = {
     );
 
     return 'Message succesfully deleted'
+  },
+
+  inbox: async (args, req) => {
+    const { id } = args
+    
+
+
+    return [{id: 2, body: 'da', sender: 2, receiver:3, sentat: 'dadas'}]
+  },
+
+  sent: async (args, req) => {
+    const { id } = args
+
+
+    return [{id: 2, body: 'da', sender: 2, receiver:3, sentat: 'dadas'}]
+
   }
 };

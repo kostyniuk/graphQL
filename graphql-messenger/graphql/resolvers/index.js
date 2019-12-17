@@ -10,7 +10,9 @@ module.exports = {
   createUser: userResolver.createUser,
   deleteUser: userResolver.deleteUser,
   sendMessage: userResolver.sendMessage,
-  deleteMessage: messageResolver.deleteMessage
+  deleteMessage: messageResolver.deleteMessage,
+  inbox: messageResolver.inbox,
+  sent: messageResolver.sent
 
 
 };
